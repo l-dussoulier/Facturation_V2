@@ -1,0 +1,37 @@
+﻿@page "/"
+
+@using Facturation_V2.Shared
+
+@inject HttpClient http
+
+<h2>Bienvenue sur votre service de facturation en ligne! </h2>
+@if (dashboard == null)
+{
+    <p>Tentative de chargement du dashboard 🔄</p>
+}
+else
+{
+    <div class="row">
+        <span class="font-weight-bolder ">Total Facturé : &nbsp;</span>
+        <span class="text-primary">@dashboard.TotalDu €</span>
+    </div>
+
+    <div class="row">
+        <span class="font-weight-bolder">Total Réglé : &nbsp; </span>
+        <span class="text-success">@dashboard.TotalRegle €</span>
+    </div>
+
+
+    <div class="row">
+        <span class="font-weight-bolder">Reste à recevoir : &nbsp; </span>
+        <span class="text-danger">@dashboard.ResteARecevoir €</span>
+    </div>
+}
+
+@code {
+    private protected DashboardVM dashboard;
+    protected override async Task OnInitializedAsync()
+    {
+        dashboard = await http.GetFromJsonAsync<DashboardVM>("api/dashboard");
+    }
+}

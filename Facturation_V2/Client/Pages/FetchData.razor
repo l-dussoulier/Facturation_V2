@@ -1,0 +1,164 @@
+﻿@page "/fetchdata"
+
+@using Facturation_V2.Shared
+
+@inject HttpClient http
+@inject NavigationManager navigation
+
+<!--Styles -->
+<style>
+    table > tfoot > tr {
+        background-color: #c9efff;
+        border-top: 1px solid #4eacd4 !important;
+    }
+
+    table > tfoot > tr > td {
+        text-align: right;
+        font-weight: bold;
+        }
+</style>
+<!--Fin Styles -->
+<!--Init variables -->
+ @{
+                decimal totalDu = 0;
+                decimal totalRegle = 0;
+                decimal totalReste = 0;
+ }
+<!--FinInit variables -->
+
+<h1>Factures</h1>
+
+@if (lesFactures == null)
+{
+    <p>Tentative de chargement de vos factures 🔄</p>
+}
+else
+{
+    <table class="table">
+        <thead>
+            <tr>
+                <th>Client</th>
+                <th>Numéro</th>
+                <th>Date Emission</th>
+                <th>Date Réglement</th>
+                <th>Montant Du</th>
+                <th>Montant Réglé</th>
+                <th>Reste à recevoir</th>
+            </tr>
+        </thead>
+        <tbody>
+           
+            @foreach (var facture in lesFactures)
+            {
+                <tr>
+                    <td>
+                        @facture.Client
+                    </td>
+                    <td>
+                        @facture.Numero
+                    </td>
+                    <td>
+                        @facture.DateEmission?.ToShortDateString()
+                    </td>
+                    <td>
+                        @facture.DateReglement?.ToShortDateString()
+                    </td>
+                    <td>
+                        @facture.MontantDu.ToString("F2")
+                    </td>
+                    <td>
+                        @facture.MontantRegle.ToString("F2")
+                    </td>
+                    <td>
+                        @((facture.MontantDu - facture.MontantRegle).ToString("F2"))
+                    </td>
+                </tr>
+
+                totalDu += facture.MontantDu;
+                totalRegle += facture.MontantRegle;
+                totalReste += facture.MontantDu - facture.MontantRegle;
+
+            }
+        </tbody>
+        <tfoot>
+            <tr>
+                <td colspan="4"></td>
+                <td>
+                    @totalDu
+                </td>
+                <td>
+                    @totalRegle
+                </td>
+                <td>
+                    @totalReste.
+                </td>
+            </tr>
+        </tfoot>
+    </table>
+}
+
+<h3>Création d'une nouvelle facture</h3>
+<EditForm Model="factureDTO" OnValidSubmit="@SubmitForm">
+    <ValidationSummary />
+    <DataAnnotationsValidator />
+
+    <div class="row">
+        <div class="col-4">
+            <div class="form-group row">
+                <label class="col-4">Client</label>
+                <div class="col-8">
+                    <InputText @bind-Value="factureDTO.Client"></InputText>
+                </div>
+            </div>
+            <div class="form-group row">
+                <label class="col-4">Numéro</label>
+                <div class="col-8">
+                    <InputText @bind-Value="factureDTO.Numero"></InputText>
+                </div>
+            </div>
+            <div class="form-group row">
+                <label class="col-4">Date Emission</label>
+                <div class="col-8">
+                    <InputDate @bind-Value="factureDTO.DateEmission"></InputDate>
+                </div>
+            </div>
+            <div class="form-group row">
+                <label class="col-4">Date Réglement</label>
+                <div class="col-8">
+                    <InputDate @bind-Value="factureDTO.DateReglement"></InputDate>
+                </div>
+            </div>
+            <div class="form-group row">
+                <label class="col-4">Montant</label>
+                <div class="col-8">
+                    <InputNumber @bind-Value="factureDTO.MontantDu"></InputNumber>
+                </div>
+            </div>
+            <div class="form-group row">
+                <label class="col-4">Montant Réglé</label>
+                <div class="col-8">
+                    <InputNumber @bind-Value="factureDTO.MontantRegle"></InputNumber>
+                </div>
+            </div>
+            <div class="form-group row">
+                <button type="submit" class="btn btn-success m-2">Valider</button>
+            </div>
+        </div>
+    </div>
+
+</EditForm>
+
+@code {
+    private IEnumerable<Facture> lesFactures = null;
+    private FactureDTO factureDTO = new FactureDTO();
+    protected override async Task OnInitializedAsync()
+    {
+        lesFactures = await http.GetFromJsonAsync<IEnumerable<Facture>>("api/factures");
+    }
+
+    protected async void SubmitForm()
+    {
+        var response = await http.PostAsJsonAsync("api/factures", factureDTO);
+        navigation.NavigateTo("/fetchdata", forceLoad: true);
+    }
+}
